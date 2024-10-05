@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undertale Sans Battle Clone</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            overflow: hidden;
+        }
+        canvas {
+            background-color: black;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+// Get canvas context
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const canvasRatio = 2 / 3;
+let canvasHeight = window.innerHeight;
+let canvasWidth = canvasHeight / canvasRatio;
+
+canvas.width = canvasWidth;
+canvas.height = canvasHeight;
+
+window.addEventListener('resize', () => {
+    canvasHeight = window.innerHeight;
+    canvasWidth = canvasHeight / canvasRatio;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+});
+
+// Image assets
+const images = {
+    sans: new Image(),
+    buttonFight: new Image(),
+    buttonAct: new Image(),
+    buttonItem: new Image(),
+    buttonMercy: new Image()
+};
+
+// Set image sources
+images.sans.src = 'path/to/sans.png';  // Provide the path to the Sans image
+images.buttonFight.src = 'path/to/fight_button.png';  // Fight button image
+images.buttonAct.src = 'path/to/act_button.png';  // Act button image
+images.buttonItem.src = 'path/to/item_button.png';  // Item button image
+images.buttonMercy.src = 'path/to/mercy_button.png';  // Mercy button image
+
+// Ensure all images are loaded before starting the game
+let imagesLoaded = 0;
+const totalImages = Object.keys(images).length;
+
+for (let key in images) {
+    images[key].onload = () => {
+        imagesLoaded++;
+        if (imagesLoaded === totalImages) {
+            startGame();
+        }
+    };
+}
+
+// Game variables
+const menuOptions = ['Start Game', 'Settings', 'Credits'];
+let selectedOption = 0;
+let gameState = 'menu'; // 'menu', 'battle'
+let playerHP = 100;
+let playerKR = 100;
+
+// Main menu navigation
+document.addEventListener('keydown', (event) => {
+    if (gameState === 'menu') {
+        if (event.key === 'ArrowUp') {
+            selectedOption = (selectedOption - 1 + menuOptions.length) % menuOptions.length;
+        } else if (event.key === 'ArrowDown') {
+            selectedOption = (selectedOption + 1) % menuOptions.length;
+        } else if (event.key === 'z') {
+            if (selectedOption === 0) {
+                startGame();
+            }
+        }
+    }
+});
+
+// Draw the battle layout
+function drawBattle() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Background
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // White battle box (fixed width and height similar to the original game)
+    const boxWidth = canvas.width * 0.6;
+    const boxHeight = canvas.height * 0.25;
+    const boxX = (canvas.width - boxWidth) / 2;
+    const boxY = canvas.height * 0.5;
+    
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+    // Inner area where player moves (black inside white border)
+    ctx.fillStyle = "black";
+    ctx.fillRect(boxX + 4, boxY + 4, boxWidth - 8, boxHeight - 8);
+    
+    // Draw the player's HP bar
+    drawHPBar();
+    
+    // Draw action buttons (using images)
+    drawButtons();
+    
+    // Draw Sans (using image)
+    drawSans();
+}
+
+function drawHPBar() {
+    // HP Bar background
+    ctx.fillStyle = "gray";
+    ctx.fillRect(canvas.width / 4, canvas.height - 150, canvas.width / 2, 30);
+    
+    // KR Bar (purple) overlay
+    ctx.fillStyle = "purple";
+    const krBarWidth = (playerKR / 100) * (canvas.width / 2);
+    ctx.fillRect(canvas.width / 4, canvas.height - 150, krBarWidth, 30);
+    
+    // HP Bar (yellow)
+    ctx.fillStyle = "yellow";
+    const hpBarWidth = (playerHP / 100) * (canvas.width / 2);
+    ctx.fillRect(canvas.width / 4, canvas.height - 150, hpBarWidth, 30);
+
+    // Draw HP/KR text
+    ctx.fillStyle = "white";
+    ctx.font = "20px Arial";
+    ctx.fillText(`HP: ${playerHP}`, canvas.width / 4, canvas.height - 160);
+    ctx.fillText(`KR: ${playerKR}`, canvas.width / 2, canvas.height - 160);
+}
+
+function drawButtons() {
+    const buttonImages = [images.buttonFight, images.buttonAct, images.buttonItem, images.buttonMercy];
+    const buttonWidth = canvas.width / 8;
+    const buttonY = canvas.height - 80;
+    
+    buttonImages.forEach((img, index) => {
+        const buttonX = (canvas.width / 4) + (buttonWidth * index) + 20 * index;
+        
+        // Draw button image
+        ctx.drawImage(img, buttonX, buttonY, buttonWidth, 40);
+    });
+}
+
+function drawSans() {
+    const sansWidth = canvas.width * 0.1;
+    const sansHeight = canvas.height * 0.25;
+    const sansX = (canvas.width - sansWidth) / 2;
+    const sansY = canvas.height / 4;
+
+    ctx.drawImage(images.sans, sansX, sansY, sansWidth, sansHeight);
+}
+
+function startGame() {
+    gameState = 'battle';
+    drawBattle();
+}
+
+function gameLoop() {
+    if (gameState === 'menu') {
+        drawMenu();
+    } else if (gameState === 'battle') {
+        drawBattle();
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+// Initial menu drawing
+function drawMenu() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.textAlign = "center";
+
+    menuOptions.forEach((option, index) => {
+        ctx.fillText(option, canvas.width / 2, canvas.height / 2 + index * 50);
+        if (index === selectedOption) {
+            ctx.fillText(">", canvas.width / 2 - 100, canvas.height / 2 + index * 50);
+        }
+    });
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
